@@ -6,6 +6,7 @@ const BASE_URL = 'http://20.2.12.209:8080/api/v1';
 test.describe('Password Reset API Tests', () => {
   let operationId;
   let otp;
+  let resetToken;
 
   test('POST /auth/password/verify - Verify password reset request', async ({ request }) => {
     const requestBody = {
@@ -34,13 +35,13 @@ test.describe('Password Reset API Tests', () => {
     console.log('Verify Response:', responseBody);
   });
 
-  test('POST /auth/password/reset - Reset the password with OTP', async ({ request }) => {
+  test('POST /auth/password/verify - Verify OTP for password reset', async ({ request }) => {
     const requestBody = {
       operationId: operationId, // Use the operationId from the previous test
       otp: otp,                 // Use the OTP from the previous test
     };
 
-    const response = await request.post(`${BASE_URL}/auth/password/reset`, {
+    const response = await request.post(`${BASE_URL}/auth/password/verify`, {
       data: requestBody,
     });
 
@@ -50,19 +51,22 @@ test.describe('Password Reset API Tests', () => {
     // Validate response body structure
     const responseBody = await response.json();
     expect(responseBody).toHaveProperty('data');
-    expect(responseBody.data).toHaveProperty('operationId');
+    expect(responseBody.data).toHaveProperty('resetToken');
+
+    // Save the resetToken for the next test
+    resetToken = responseBody.data.resetToken;
 
     // Log the response for debugging
-    console.log('Password Reset Response:', responseBody);
+    console.log('Password Reset Verify Response:', responseBody);
   });
 
-  test('POST /auth/password/change - Change the password with the token', async ({ request }) => {
+  test('POST /auth/password/reset - Reset the password with reset token', async ({ request }) => {
     const requestBody = {
-      token: operationId,  // Use the operationId as token for password change
+      resetToken: resetToken, // Use the resetToken from the previous test
       password: "NewPassword123!", // Set a new password
     };
 
-    const response = await request.post(`${BASE_URL}/auth/password/change`, {
+    const response = await request.post(`${BASE_URL}/auth/password/reset`, {
       data: requestBody,
     });
 
@@ -76,6 +80,6 @@ test.describe('Password Reset API Tests', () => {
     expect(responseBody.meta).toHaveProperty('message');
 
     // Log the response for debugging
-    console.log('Password Change Response:', responseBody);
+    console.log('Password Reset Response:', responseBody);
   });
 });
